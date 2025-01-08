@@ -1,4 +1,6 @@
 package github.com/jonesz/alrw-fut
 
 require {
+  github.com/diku-dk/linalg 0.5.1 #02ac17238bda19049b037fd7e5e49453afef1b59
+  github.com/diku-dk/sorts 0.6.0 #f448cd990c86c566715915a8fc4182c8c2ff5400
 }
