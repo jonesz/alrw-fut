@@ -34,7 +34,7 @@ module mk_crr (T: integral_req)
         |> L.matadd (L.matmul (transpose p_X) p_X)  -- X'X + aI
         |> L.inv                                    -- inv(X'X + aI)
       in L.matmul (L.matmul p_X m) (transpose p_X)  -- X inv(X'X + aI) X'
-         |> L.matsub (L.eye (n + 1))                -- aI - X inv(X'X + aI) X'
+         |> L.matsub (L.eye (n + 1))                -- I - X inv(X'X + aI) X'
 
     -- (y_i, ..., y_n, 0)
     let p_A = L.matmul p_C (Y ++ [[T.i64 0i64]]) |> flatten
