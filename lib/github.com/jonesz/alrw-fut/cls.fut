@@ -11,6 +11,23 @@ local module type integral_req = {
   include ordered_field with t = t
 }
 
+local module type inner_cls = {
+  type t
+  val hat [n][p] : [n][p]t -> [1][p]t -> [n+1][n+1]t
+}
+
+local module mk_inner_cls (T: integral_req) : inner_cls with t = T.t = {
+  type t = T.t
+  module L = mk_linalg T
+
+  def hat X x =
+      let p_X = X ++ x
+      let m =
+        L.matmul (transpose p_X) p_X                -- X'X
+        |> L.inv                                    -- inv(X'X)
+      in L.matmul (L.matmul p_X m) (transpose p_X)  -- X inv(X'X) X'
+}
+
 --| 2.3.3 Two Modifications.
 module mk_cls_deleted (T: integral_req)
   : {
@@ -32,8 +49,8 @@ module mk_cls_deleted (T: integral_req)
         L.matmul (transpose p_X) p_X                -- X'X
         |> L.inv                                    -- inv(X'X)
       in L.matmul (L.matmul p_X m) (transpose p_X)  -- X inv(X'X) X'
-    let h = L.fromdiag H
 
+    let h = L.fromdiag H
     let p_C = L.matsub (L.eye (n + 1)) H            -- I - X inv(X'X) X'
 
     let p_A = 
