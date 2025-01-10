@@ -1,6 +1,7 @@
 --| The transductive conformal ridge regressor presented in ALRW (2.3.2 Basic CRR).
 import "../../diku-dk/linalg/linalg"
 import "../../diku-dk/sorts/radix_sort"
+import "cp"
 
 local module type integral_req = {
   type t
@@ -12,20 +13,18 @@ local module type integral_req = {
 }
 
 --| 2.3.2 Basic CRR.
-module mk_crr (T: integral_req)
-  : {
-      val predict [n]
-                  [p] :
-        (a: T.t)
-        -> (eps: f32)
-        -> (X: [n][p]T.t)
-        -> (Y: [n][1]T.t)
-        -> (x: [1][p]T.t)
-        -> (T.t, T.t)
-    } = {
+module mk_crr (T: integral_req) : cp = {
+
+  type x [p] = [p]T.t
+  type y     = [1]T.t
+  type Y     = (T.t, T.t)
+  type param = {a: T.t}
+
   module L = mk_linalg T
 
-  def predict [p] [n] a eps X Y x =
+  def predict [n] [p] (pm: param) eps X Y x =
+    let a = pm.a
+    let x = [x]
 
     let p_C =                                       -- eye - the "hat" matrix.
       let p_X = X ++ x
