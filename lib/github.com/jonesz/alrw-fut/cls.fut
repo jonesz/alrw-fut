@@ -1,6 +1,7 @@
 --| The transductive conformalized least squares implementation presented in ALRW (2.3.3 Basic Modifications).
 import "../../diku-dk/linalg/linalg"
 import "../../diku-dk/sorts/radix_sort"
+import "cp"
 
 local module type integral_req = {
   type t
@@ -43,20 +44,18 @@ local module mk_inner_cls (T: integral_req) : inner_cls with t = T.t = {
 }
 
 --| 2.3.3 Two Modifications.
-module mk_cls_deleted (T: integral_req)
-  : {
-      val predict [n]
-                  [p] :
-        (eps: f32)
-        -> (X: [n][p]T.t)
-        -> (Y: [n][1]T.t)
-        -> (x: [1][p]T.t)
-        -> (T.t, T.t)
-    } = {
+module mk_cls_deleted (T: integral_req) : cp = {
+  type x [p] = [p]T.t
+  type y     = [1]T.t
+  type Y     = (T.t, T.t)
+  type param = {}
+
   module L = mk_linalg T
   module CLS = mk_inner_cls T
 
-  def predict [n] eps X Y x =
+  def predict [n] _param eps X Y x =
+    let x = [x]
+
     let H = CLS.hat X x
     let h = L.fromdiag H
     let p_C = CLS.C_from_hat H
@@ -93,19 +92,18 @@ module mk_cls_deleted (T: integral_req)
 
 --| 2.3.3 Two Modifications.
 module mk_cls_studentized (T: integral_req)
-  : {
-      val predict [n]
-                  [p] :
-        (eps: f32)
-        -> (X: [n][p]T.t)
-        -> (Y: [n][1]T.t)
-        -> (x: [1][p]T.t)
-        -> (T.t, T.t)
-    } = {
+  : cp = {
+
+  type x [p] = [p]T.t
+  type y     = [1]T.t
+  type Y     = (T.t, T.t)
+  type param = {}
+
   module L = mk_linalg T
   module CLS = mk_inner_cls T
 
-  def predict [n] eps X Y x =
+  def predict [n] _param eps X Y x =
+    let x = [x]
 
     let H = CLS.hat X x
     let h = L.fromdiag H
