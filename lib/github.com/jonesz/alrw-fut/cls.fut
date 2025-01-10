@@ -13,7 +13,11 @@ local module type integral_req = {
 
 local module type inner_cls = {
   type t
+
   val hat [n][p] : [n][p]t -> [1][p]t -> [n+1][n+1]t
+
+  val lower_idx : f32 -> i64 -> i64
+  val upper_idx : f32 -> i64 -> i64
 }
 
 local module mk_inner_cls (T: integral_req) : inner_cls with t = T.t = {
@@ -26,6 +30,12 @@ local module mk_inner_cls (T: integral_req) : inner_cls with t = T.t = {
         L.matmul (transpose p_X) p_X                -- X'X
         |> L.inv                                    -- inv(X'X)
       in L.matmul (L.matmul p_X m) (transpose p_X)  -- X inv(X'X) X'
+
+  def lower_idx eps n =
+    (eps / 2f32) * (f32.i64 n) |> f32.floor |> i64.f32          -- floor((eps/2)n)
+
+  def upper_idx eps n =
+    (1f32 - (eps / 2f32)) * (f32.i64 n) |> f32.ceil |> i64.f32  -- ceil((1f32-(eps/2))n)
 }
 
 --| 2.3.3 Two Modifications.
