@@ -54,18 +54,12 @@ module mk_cls_deleted (T: integral_req)
         -> (T.t, T.t)
     } = {
   module L = mk_linalg T
+  module CLS = mk_inner_cls T
 
   def predict [n] eps X Y x =
-
-    let H =                                         -- the "hat" matrix.
-      let p_X = X ++ x
-      let m =
-        L.matmul (transpose p_X) p_X                -- X'X
-        |> L.inv                                    -- inv(X'X)
-      in L.matmul (L.matmul p_X m) (transpose p_X)  -- X inv(X'X) X'
-
+    let H = CLS.hat X x
     let h = L.fromdiag H
-    let p_C = L.matsub (L.eye (n + 1)) H            -- I - X inv(X'X) X'
+    let p_C = CLS.C_from_hat H
 
     let p_A = 
       let A = (L.matmul p_C (Y ++ [[T.i64 0i64]]) |> flatten) :> [n+1]T.t
@@ -91,8 +85,8 @@ module mk_cls_deleted (T: integral_req)
     let l = radix_sort_float T.num_bits T.get_bit l
     let u = radix_sort_float T.num_bits T.get_bit u
 
-    let l_idx = (eps / 2f32) * (f32.i64 n) |> f32.floor |> i64.f32          -- floor((eps/2)n)
-    let u_idx = (1f32 - (eps / 2f32)) * (f32.i64 n) |> f32.ceil |> i64.f32  -- ceil((1f32-(eps/2))n)
+    let l_idx = CLS.lower_idx eps n
+    let u_idx = CLS.upper_idx eps n
 
     in (l[l_idx], u[u_idx])
 }
@@ -109,18 +103,13 @@ module mk_cls_studentized (T: integral_req)
         -> (T.t, T.t)
     } = {
   module L = mk_linalg T
+  module CLS = mk_inner_cls T
 
   def predict [n] eps X Y x =
 
-    let H =                                         -- the "hat" matrix.
-      let p_X = X ++ x
-      let m =
-        L.matmul (transpose p_X) p_X                -- X'X
-        |> L.inv                                    -- inv(X'X)
-      in L.matmul (L.matmul p_X m) (transpose p_X)  -- X inv(X'X) X'
+    let H = CLS.hat X x
     let h = L.fromdiag H
-
-    let p_C = L.matsub (L.eye (n + 1)) H            -- I - X inv(X'X) X'
+    let p_C = CLS.C_from_hat H
 
     let p_A = 
       let A = (L.matmul p_C (Y ++ [[T.i64 0i64]]) |> flatten) :> [n+1]T.t
@@ -141,8 +130,8 @@ module mk_cls_studentized (T: integral_req)
 
     let t = radix_sort_float T.num_bits T.get_bit t
 
-    let l_idx = (eps / 2f32) * (f32.i64 n) |> f32.floor |> i64.f32          -- floor((eps/2)n)
-    let u_idx = (1f32 - (eps / 2f32)) * (f32.i64 n) |> f32.ceil |> i64.f32  -- ceil((1f32-(eps/2))n)
+    let l_idx = CLS.lower_idx eps n
+    let u_idx = CLS.upper_idx eps n
 
     in (t[l_idx], t[u_idx])
 }
