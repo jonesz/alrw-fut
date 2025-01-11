@@ -4,16 +4,14 @@ module type cp = {
 	--| `x` is an example with `p` features.
 	type x [p]
 
-	-- TODO: The above has features, but this doesn't? Perhaps we need a module that's 
-	-- specific for a "cp_linear_regression" algorithm and maps `p` features to a single output.
-	--| 'y' is an output.
-	type y
+	--| 'y' is an output with `q` features.
+	type y [q]
 
 	--| The output, prediction set type of the conformal predictor.
-	type Y
+	type Y [q]
 
 	--| The parameters for a specific algorithm.
 	type param
 
-	val predict [n][p] : param -> f32 -> [n]x[p] -> [n]y -> x[p] -> Y
+	val predict [n][p][q] : param -> f32 -> [n]x[p] -> [n]y[q] -> [1]x[p] -> Y[q]
 }

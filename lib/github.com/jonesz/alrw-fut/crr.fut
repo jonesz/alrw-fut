@@ -16,15 +16,14 @@ local module type integral_req = {
 module mk_crr (T: integral_req) : cp = {
 
   type x [p] = [p]T.t
-  type y     = [1]T.t
-  type Y     = (T.t, T.t)
+  type y [q] = [q]T.t
+  type Y [q] = ([q]T.t, [q]T.t)
   type param = {a: T.t}
 
   module L = mk_linalg T
 
-  def predict [n] [p] (pm: param) eps X Y x =
+  def predict [n] [p] [q] (pm: param) (eps: f32) (X: [n]x[p]) (Y: [n]y[q]) (x: [1]x[p]): Y[q] =
     let a = pm.a
-    let x = [x]
 
     let p_C =                                       -- eye - the "hat" matrix.
       let p_X = X ++ x
@@ -35,10 +34,10 @@ module mk_crr (T: integral_req) : cp = {
       in L.matmul (L.matmul p_X m) (transpose p_X)  -- X inv(X'X + aI) X'
          |> L.matsub (L.eye (n + 1))                -- I - X inv(X'X + aI) X'
 
-    -- (y_i, ..., y_n, 0)
-    let p_A = L.matmul p_C (Y ++ [[T.i64 0i64]]) |> flatten
-    -- (0_i, ..., 0_n, 1)
-    let p_B = (transpose [L.veczeros n]) ++ [[T.i64 1i64]] |> L.matmul p_C |> flatten
+    -- C * (y_i, ..., y_n, 0)'
+    let p_A = L.matmul p_C (Y ++ [(L.veczeros q)])
+    -- C * (0_i, ..., 0_n, 1)'
+    let p_B = (replicate n (L.veczeros q)) ++ [(L.vecones q)] |> L.matmul p_C
 
     -- TODO: We could parameterize this by conformity score...
     let conf idx =
