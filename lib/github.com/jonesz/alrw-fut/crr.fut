@@ -64,7 +64,7 @@ module mk_crr (T: integral_req) : cp = {
     in (l[l_idx], u[u_idx])
 }
 
-module mk_crr_icp (T: integral_req) : icp = {
+module mk_crr_split (T: integral_req) : icp = {
   type x [p] = [p]T.t
   type y     = [1]T.t
   type Y     = (T.t, T.t)
