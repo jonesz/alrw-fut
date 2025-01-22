@@ -2,6 +2,7 @@
 import "../../diku-dk/linalg/linalg"
 import "../../diku-dk/sorts/radix_sort"
 import "cp"
+import "icp"
 
 local module type integral_req = {
   type t
@@ -61,4 +62,24 @@ module mk_crr (T: integral_req) : cp = {
     let u_idx = (1f32 - (eps / 2f32)) * (f32.i64 n) |> f32.ceil |> i64.f32  -- ceil((1f32-(eps/2))n)
 
     in (l[l_idx], u[u_idx])
+}
+
+module mk_crr_icp (T: integral_req) : icp = {
+  type x [p] = [p]T.t
+  type y     = [1]T.t
+  type Y     = (T.t, T.t)
+  type param = {a: T.t}
+
+  module L = mk_linalg T
+
+  def fit param X Y =
+    let a = pm.a
+    let left_inv =
+      L.eye p |> L.matscale a                         -- aI
+      |> L.matadd (L.matmul (transpose x) x)          -- X'X + aI
+      |> L.inv                                        -- inv(X'X + aI)
+    in L.matmul (L.matmul left_inv (transpose x)) y   -- inv(X'X + aI) X' Y
+
+  def predict =
+    ???
 }
