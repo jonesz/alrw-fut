@@ -65,20 +65,23 @@ module mk_crr (T: integral_req) : cp = {
 }
 
 module mk_crr_split (T: integral_req) : icp = {
-  type x [p] = [p]T.t
-  type y     = [1]T.t
-  type Y     = (T.t, T.t)
-  type param = {a: T.t}
+
+  type x [p]   = [p]T.t
+  type y       = [1]T.t
+  type Y       = (T.t, T.t)
+  type fit [p] = [p]T.t
+  type param   = {a: T.t}
 
   module L = mk_linalg T
 
-  def fit param X Y =
+  def fit [l][p] (pm: param) (X: [l]x[p]) (Y: [l]y) =
     let a = pm.a
     let left_inv =
       L.eye p |> L.matscale a                         -- aI
-      |> L.matadd (L.matmul (transpose x) x)          -- X'X + aI
+      |> L.matadd (L.matmul (transpose X) X)          -- X'X + aI
       |> L.inv                                        -- inv(X'X + aI)
-    in L.matmul (L.matmul left_inv (transpose x)) y   -- inv(X'X + aI) X' Y
+    in L.matmul (L.matmul left_inv (transpose X)) Y   -- inv(X'X + aI) X' Y
+      |> flatten :> fit[p]
 
   def predict =
     ???

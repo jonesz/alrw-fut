@@ -12,9 +12,9 @@ module type icp = {
 	type param
 
 	--| The output after calling 'fit'.
-	type fit
+	type fit [p]
 
-	val fit [l][p] : param -> [l]x[p] -> [l]y -> fit
+	val fit [l][p] : param -> [l]x[p] -> [l]y -> fit[p]
 
 	val predict [m][p] : param -> f32 -> [m]x[p] -> [m]y -> x[p] -> Y
 }
