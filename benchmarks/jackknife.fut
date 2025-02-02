@@ -8,7 +8,7 @@ module L = mk_linalg f32
 -- random input { [100][10]f32 [100]f32 }
 -- random input { [100][100]f32 [100]f32 }
 entry bench_jackknife_ols X Y =
-	let mf [n][m] (a: [n]([m]f32, f32)) =
+	let mf a =
 		let (X, Y) = unzip a
 		in L.ols X Y
 
