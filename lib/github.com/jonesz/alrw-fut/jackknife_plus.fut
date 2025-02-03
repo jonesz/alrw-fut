@@ -53,6 +53,7 @@ module mk_jackknife_plus (T: integral) = {
   def fit A mu F =
     jackknife_plus_fit A mu residual_fn F
 
-  def pred weights residuals mu a x =
-    jackknife_plus_pred weights residuals (radix_sort T.num_bits T.get_bit) mu (T.+) (T.-) a x
+  def pred r mu a x =
+    let (j, k) = unzip r
+    in jackknife_plus_pred j k (radix_sort T.num_bits T.get_bit) mu (T.+) (T.-) a x
 }
