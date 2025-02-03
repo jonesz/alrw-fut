@@ -29,17 +29,17 @@ local def jackknife_plus_fit 't 'w [d] [n]
                              (F: [n]([d]t, t)) =
   let weights = mu_loo F A
   let residuals_loo = R_loo mu residual weights F
-  in (weights, residuals_loo)
+  in zip weights residuals_loo
 
 local def jackknife_plus_pred 't 'w [d] [n]
-                              (weights: [n]w)
-                              (residuals: [n]t)
+                              (w_r: [n](w, t))
                               (sort: [n]t -> [n]t)
                               (mu: w -> [d]t -> t)
                               (add: t -> t -> t)
                               (sub: t -> t -> t)
                               (a: f32)
                               (x: [d]t) =
+  let (weights, residuals) = unzip w_r
   let pred = map (\z -> mu z x) weights
   let sorted_v_l = map2 (sub) pred residuals |> sort
   let sorted_v_u = map2 (add) pred residuals |> sort
@@ -53,7 +53,9 @@ module mk_jackknife_plus (T: numeric) = {
   def fit A mu F =
     jackknife_plus_fit A mu residual_fn F
 
-  def pred r mu a x =
-    let (j, k) = unzip r
-    in jackknife_plus_pred j k (merge_sort (T.<=)) mu (T.+) (T.-) a x
+  def pred w_r mu a x =
+    jackknife_plus_pred w_r (merge_sort (T.<=)) mu (T.+) (T.-) a x
+
+  def fit_pred A mu F a x =
+    pred (fit A mu F) mu a x
 }
