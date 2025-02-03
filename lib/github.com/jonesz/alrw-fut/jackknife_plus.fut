@@ -1,5 +1,5 @@
 -- https://arxiv.org/pdf/1905.02928
-import "../../diku-dk/sorts/radix_sort"
+import "../../diku-dk/sorts/merge_sort"
 
 local def q_hat_u 't [n] a (sorted_v: [n]t) =
   let idx = n + 1 |> f32.i64 |> (*) (1f32 - a) |> f32.ceil |> i64.f32
@@ -45,7 +45,7 @@ local def jackknife_plus_pred 't 'w [d] [n]
   let sorted_v_u = map2 (add) pred residuals |> sort
   in (q_hat_l a sorted_v_l, q_hat_u a sorted_v_u)
 
-module mk_jackknife_plus (T: integral) = {
+module mk_jackknife_plus (T: numeric) = {
   type t = T.t
 
   local def residual_fn y x = (T.-) y x |> T.abs
@@ -55,5 +55,5 @@ module mk_jackknife_plus (T: integral) = {
 
   def pred r mu a x =
     let (j, k) = unzip r
-    in jackknife_plus_pred j k (radix_sort T.num_bits T.get_bit) mu (T.+) (T.-) a x
+    in jackknife_plus_pred j k (merge_sort (T.<=)) mu (T.+) (T.-) a x
 }
