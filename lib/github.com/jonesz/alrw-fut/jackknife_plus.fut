@@ -1,61 +1,50 @@
--- https://arxiv.org/pdf/1905.02928
+--| Implementation based on "Predictive inference with the jackknife+"
+--| by Barber, Candes, Ramdas, Tibsharani (https://arxiv.org/pdf/1905.02928).
+-- TODO: We could utilize `radix_sort`, but we need to split the modules into
+-- `int` and `f32` implementations.
 import "../../diku-dk/sorts/merge_sort"
 
+-- The `(1 - a)` quantile of the empirical distribution.
 local def q_hat_u 't [n] a (sorted_v: [n]t) =
   let idx = n + 1 |> f32.i64 |> (*) (1f32 - a) |> f32.ceil |> i64.f32
   in sorted_v[idx]
 
+-- The `a` quantile of the empirical distribution.
 local def q_hat_l 't [n] a (sorted_v: [n]t) =
   let idx = n + 1 |> f32.i64 |> (*) a |> f32.floor |> i64.f32
   in sorted_v[idx]
 
-local def mu_loo 't 'w [n] [d] (F: [n]([d]t, t)) (A: []([d]t, t) -> w) : [n]w =
+-- The set of `u_i` weights trained on the `i` leave-one-out set.
+local def u_loo 't [n] A (F: [n]([]t, t)) =
   let loo x = rotate x F |> tail
   in map (loo) (iota n) |> map (A)
 
-local def R_loo 't 'w [n] [d]
-                (mu: w -> [d]t -> t)
-                (residual: t -> t -> t)
-                (weights: [n]w)
-                (F: [n]([d]t, t)) =
+-- The residuals for each `u_i` with their corresponding leave-one-out value: |Y_i - u_i(X_i)|.
+local def R_loo 't [n] u residual_fn w (F: [n]([]t, t)) =
   let loo x = rotate x F |> head
   let (x_loo, y_loo) = map (loo) (iota n) |> unzip
-  in map2 (mu) weights x_loo |> map2 (residual) y_loo
-
-local def jackknife_plus_fit 't 'w [d] [n]
-                             (A: []([d]t, t) -> w)
-                             (mu: w -> [d]t -> t)
-                             (residual: t -> t -> t)
-                             (F: [n]([d]t, t)) =
-  let weights = mu_loo F A
-  let residuals_loo = R_loo mu residual weights F
-  in zip weights residuals_loo
-
-local def jackknife_plus_pred 't 'w [d] [n]
-                              (w_r: [n](w, t))
-                              (sort: [n]t -> [n]t)
-                              (mu: w -> [d]t -> t)
-                              (add: t -> t -> t)
-                              (sub: t -> t -> t)
-                              (a: f32)
-                              (x: [d]t) =
-  let (weights, residuals) = unzip w_r
-  let pred = map (\z -> mu z x) weights
-  let sorted_v_l = map2 (sub) pred residuals |> sort
-  let sorted_v_u = map2 (add) pred residuals |> sort
-  in (q_hat_l a sorted_v_l, q_hat_u a sorted_v_u)
+  in map2 (u) w x_loo |> map2 (residual_fn) y_loo
 
 module mk_jackknife_plus (T: numeric) = {
   type t = T.t
 
   local def residual_fn y x = (T.-) y x |> T.abs
+  -- A comparison based sort because `numeric` has no constraints upon `get_bit`, `bits`.
+  local def sort = merge_sort (T.<=)
 
-  def fit A mu F =
-    jackknife_plus_fit A mu residual_fn F
+  --| Fit models `u_i` with `A` according to the jackknife+
+  def fit A u F =
+    let w = u_loo A F
+    let r = R_loo u residual_fn w F
+    in zip w r
 
-  def pred w_r mu a x =
-    jackknife_plus_pred w_r (merge_sort (T.<=)) mu (T.+) (T.-) a x
+  --| Provide a confidence interval for `x` according to jackknife+ utilizing previously trained
+  --| data.
+  def pred a u w_r x =
+    let (w, r) = unzip w_r                     -- (weights, residuals).
+    let p = map (\w_i -> u w_i x) w            -- Y_{i+1} = u_i(w_i, x_{i+1}).
+    let sorted_v_l = map2 (T.-) p r |> sort
+    let sorted_v_u = map2 (T.+) p r |> sort
+    in (q_hat_l a sorted_v_l, q_hat_u a sorted_v_u)
 
-  def fit_pred A mu F a x =
-    pred (fit A mu F) mu a x
 }

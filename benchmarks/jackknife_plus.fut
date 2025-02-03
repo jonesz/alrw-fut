@@ -12,6 +12,7 @@ entry bench_jackknife_plus_ols X Y x =
 	let A XY =
 		let (X, Y) = unzip XY
 		in L.ols X Y
-	let mu = (L.dotprod)
+
+	let u = (L.dotprod)
 	let F = zip X Y
-	in J.fit_pred A mu F 0.95f32 x
+	in J.fit A u F |> flip (J.pred 0.95f32 u) x
