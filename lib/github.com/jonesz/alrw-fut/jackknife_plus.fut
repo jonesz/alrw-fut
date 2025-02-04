@@ -1,5 +1,9 @@
 --| Implementation based on "Predictive inference with the jackknife+"
 --| by Barber, Candes, Ramdas, Tibsharani (https://arxiv.org/pdf/1905.02928).
+
+-- TODO: Within OLS, KRR, etc. it's possible to compute loo without retraining each
+-- model.
+
 -- TODO: We could utilize `radix_sort`, but we need to split the modules into
 -- `int` and `f32` implementations.
 import "../../diku-dk/sorts/merge_sort"
