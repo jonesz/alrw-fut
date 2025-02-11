@@ -1,25 +1,51 @@
 import "../../../diku-dk/sorts/merge_sort"
 import "../../../diku-dk/linalg/linalg"
-import "kde"
+import "pkde"
 
-module mk_nested(R: real) = {
-	--| radius.
-	type r = R.t
-	module KDE = mk_kde(R)
-	def radius = ???
+module mk_nested (R: real) = {
+  type r = R.t
+  type ball = #none | #radius r
 
-	def seq [B] 't (d_y: t -> t -> r) (sigma: r) (sim_hat: [B]t) (y_l: [B]t) : [B](t, r) =
-		map (KDE.lambda_i_b d_y sigma y_l) sim_hat -- Compute lambda_i for each simulation.
-		|> zip sim_hat                             -- Zip them with the original y_i
-		|> merge_sort_by_key (.1) (R.<=)           -- Sort them in ascending value.
-		|> map (\a -> (a.0, radius))
+  def radius = ???
 
-	def cs 't [B] (d_y: t -> t -> r) y (lambda_y_i: [B]t) : i64 =
-		let contains y_sim =
-			d_y y y_sim |> (R.<=) radius
+  -- Compute the sequence of nested sets.
+  def sequence 'a [B] (lambda_b: [B]r) (y_hat: [B]a) : ([B]a, [B][B]ball) =
+    let (lambda_b_sorted, y_hat_sorted) = zip lambda_b y_hat |> merge_sort_by_key (.0) (R.<=) |> unzip
+    -- TODO: 1) There's a far more efficient manner to store this data.
+    --       2) There's likely an indexing error here `iota` vs 1-starting-index...
 
-		let tmp = map (contains) lambda_y_i
-		in if or tmp
-			then zip tmp (iota B) |> filter (.0) |> last |> (.1)
-			else 1i64 |> i64.neg
+    in ( y_hat_sorted
+       , map (\lambda_t ->
+                -- the `t`'th order statistic...
+                map (\lambda_i ->
+                       if (R.>=) lambda_i lambda_t
+                       then #radius radius
+                       else #none)
+                    lambda_b_sorted)
+             lambda_b_sorted
+       )
+
+  def cs 'a [B] (dy: a -> a -> r) ((y_hat, nested_sets): ([B]a, [B][B]ball)) y =
+    -- `y` is contained within the ball if the distance is <= to the ball's radius.
+    let y_in_ball b r = dy b y |> (R.>=) r
+
+    -- For all of the nested sets, compute whether each `y_hat` contains `y`.
+    let (max_f, _) =
+      map (\set ->
+             map2 (\b_i r_i ->
+                     match r_i
+                     case #none -> false
+                     case #radius rad -> y_in_ball b_i rad)
+                  y_hat
+                  set
+             |> or)
+          nested_sets
+
+      -- To find the maximum index, zip the `bool`s with the index, then filter them,
+      -- and take the last th remains
+      |> zip (iota B)
+      |> filter (.1)
+      |> last
+
+    in max_f
 }
