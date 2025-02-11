@@ -5,6 +5,14 @@ import "pkde"
 def histogram [n] (k: i64) (is: [n]i64) : [k]i32 =
   hist (+) 0 k is (replicate n 1)
 
+-- Given the distribution of conformal scores, compute the correspond `(1-a)` nested set (**Figure 3.2**).
+def conformal_cutoff [k] alpha (p: [k]i32) =
+  let s = scan (+) 0 p 
+  -- The total number of conformal scores is at `last s`; we want to find the minimum conformal
+  -- score that eclipses `(1-a) * total`.
+  let (idx, _) = zip (iota k) s |> filter (\a -> a.1 >= ((1f32 - alpha) * (f32.i32 (last s)) |> i32.f32)) |> head
+  in idx
+
 module mk_calibrate (R: real) = {
   type t = R.t
   module P = mk_pkde R
