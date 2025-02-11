@@ -25,7 +25,7 @@ module mk_nested (R: real) = {
              lambda_b_sorted
        )
 
-  def cs 'a [B] (dy: a -> a -> r) ((y_hat, nested_sets): ([B]a, [B][B]ball)) y =
+  def cs 'a [B] (dy: a -> a -> r) y ((y_hat, nested_sets): ([B]a, [B][B]ball)) =
     -- `y` is contained within the ball if the distance is <= to the ball's radius.
     let y_in_ball b r = dy b y |> (R.>=) r
 
