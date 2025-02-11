@@ -45,7 +45,7 @@ module mk_nested (R: real) = {
       -- and take the last th remains
       |> zip (iota B)
       |> filter (.1)
-      |> last
+      |> last                   -- TODO: What if the above filter returns nothing?
 
     in max_f
 }
