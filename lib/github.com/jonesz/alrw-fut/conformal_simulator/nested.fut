@@ -2,6 +2,17 @@ import "../../../diku-dk/sorts/merge_sort"
 import "../../../diku-dk/linalg/linalg"
 import "pkde"
 
+module type nested = {
+  type r
+  type seq 'a
+
+  -- | Given a ranking and the set of points, produce the nested conformal set sequence.
+  val sequence 'a [B] : [B]r -> [B]a -> seq a
+
+  -- | Calculate the conformal score for some `y` and some nested conformal set sequence.
+  val cs 'a [B]: (a -> a -> r) -> a -> seq a -> i64
+}
+
 module mk_nested (R: real) = {
   type r = R.t
   type ball = #none | #radius r
