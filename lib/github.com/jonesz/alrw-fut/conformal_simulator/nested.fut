@@ -34,7 +34,7 @@ module mk_nested_min_covering (R: real) = {
     -- `y` is contained within the ball if the distance is <= to the ball's radius.
     let y_in_ball b r = d_y b y |> (R.>=) r
     in map (flip y_in_ball radius) y_hat_sorted
-      |> zip (iota B) |> filter (.1) |> map (.0)
-      |> last                                    -- See the above note in the construction.
-      |> (+) 1                                   -- Go from zero-indexing to one-indexing.
+      |> zip (iota B) |> filter (.1) |> map (\idx -> idx.0 + 1) -- Go from zero-indexing to one-indexing.
+      |> concat [0]        -- Make sure F_0 = Y is contained within the set.
+      |> last              -- See the above note in the construction.
 }

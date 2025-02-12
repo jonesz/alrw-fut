@@ -16,9 +16,9 @@ def conformal_cutoff [k] alpha (p: [k]i32) =
 module mk_calibrate (R: real) = {
   type t = R.t
   module P = mk_pkde R
-  module N = mk_nested R
+  module N = mk_nested_min_covering R
 
   -- Calibrate with pre-existing `Y_hat` (the simulator output).
-  def calibrate 'a [m] [B] dy sigma (Y: [m]a) (Y_hat: [m][B]a) =
-    map2 (\y y_hat -> P.rank dy sigma y_hat |> flip N.sequence y_hat |> N.cs dy y) Y Y_hat |> histogram B
+  def calibrate 'a [m] [B] d_y z sigma (Y: [m]a) (Y_hat: [m][B]a) =
+    map2 (\y y_hat -> P.rank d_y sigma y_hat |> flip (N.sequence d_y z) y_hat |> N.cs d_y y) Y Y_hat |> histogram B
 }
