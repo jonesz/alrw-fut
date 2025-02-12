@@ -1,7 +1,9 @@
 import "../../../../diku-dk/cpprandom/random"
+import "../calibrate"
 
 module X_dist = uniform_real_distribution f32 minstd_rand
 module Y_dist = normal_distribution f32 minstd_rand
+module CS = mk_calibrate f32
 
 -- (4.1) ~ the generative distribution from Lei and Wasserman (2014).
 def sample_X rng = X_dist.rand (-1.5f32, 1.5f32) rng
@@ -34,3 +36,5 @@ def oracle_dataset seed (n: i64) (B: i64) (m: i64) =
   let (_rngs, Y_test) = map2 (sample_Y) rngs X_test |> unzip
 
   in ((X_calibrate, Y_calibrate, Y_simulator), (X_test, Y_test))
+
+def d_y a b = (a - b) * (a - b) |> f32.sqrt
