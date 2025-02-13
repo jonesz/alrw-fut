@@ -6,7 +6,10 @@ module mk_pkde(R: real) = {
 
 	-- Rank the members of `sim_hat(x_i, B)` via a GKPDE.
 	def rank 'a [B] dy sigma (y_hat: [B]a) =
+		let mean [z] (xs: [z]t) =
+			R.sum xs |> flip (R./) (R.i64 z)
 		let inner y_b y_i = -- (3.1) ~ K(dy(y_b, y_i) / sigma)
 			dy y_b y_i |> (R.*) (R.recip sigma) |> K
-		in map (\y_b -> map (\y_i -> inner y_b y_i) y_hat |> reduce (R.+) (R.i64 0) |> (R.*) (R.i64 B |> R.recip)) y_hat
+
+		in map (\y_b -> map (inner y_b) y_hat |> mean) y_hat
 }
