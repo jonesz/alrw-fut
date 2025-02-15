@@ -21,4 +21,8 @@ module mk_calibrate (R: real) = {
   -- Calibrate with pre-existing `Y_hat` (the simulator output).
   def calibrate 'a [m] [B] d_y z sigma (Y: [m]a) (Y_hat: [m][B]a) =
     map2 (\y y_hat -> P.rank d_y sigma y_hat |> flip (N.sequence d_y z) y_hat |> N.cs d_y y) Y Y_hat |> histogram B
+
+  def predict 'a [B] d_y z sigma score (Y_hat: [B]a) =
+    let (radius, spheres) = P.rank d_y sigma Y_hat |> flip (N.sequence d_y z) Y_hat
+    in (radius, drop score spheres)
 }
