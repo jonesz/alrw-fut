@@ -1,5 +1,5 @@
 import "../../../../diku-dk/cpprandom/random"
-import "../calibrate"
+import "../calibrate_predict"
 
 module X_dist = uniform_real_distribution f32 minstd_rand
 module Y_dist = normal_distribution f32 minstd_rand
@@ -31,7 +31,6 @@ def oracle_dataset seed (n: i64) (B: i64) (m: i64) =
          rngs
          X_calibrate
     |> unzip
-
   let rng = minstd_rand.join_rng rngs
   let (rngs, X_test) = map (sample_X) (minstd_rand.split_rng m rng) |> unzip
   let (rngs, Y_test) = map2 (sample_Y) rngs X_test |> unzip
@@ -43,7 +42,6 @@ def oracle_dataset seed (n: i64) (B: i64) (m: i64) =
          rngs
          X_test
     |> unzip
-
   in ((X_calibrate, Y_calibrate, Y_calibrate_simulator), (X_test, Y_test_simulator, Y_test))
 
 def d_y a b = (a - b) * (a - b) |> f32.sqrt
@@ -52,6 +50,14 @@ def d_y a b = (a - b) * (a - b) |> f32.sqrt
 -- entry: lw
 -- input { 500i64 100i64 500i64 }
 entry lw n B m =
+  let z = 0.95f32
+  let sigma = 0.025f32
   let ((_, Y_calibrate, Y_simulator), (_, Y_test_simulator, Y_test)) = oracle_dataset [123] n B m
-  let idx = CS.calibrate d_y 0.95f32 0.25f32 Y_calibrate Y_simulator |> conformal_cutoff 0.05f32
-  in ???
+  let idx = CS.calibrate d_y z sigma Y_calibrate Y_simulator |> conformal_cutoff 0.05f32
+  let rs = map (CS.predict d_y z sigma idx) Y_test_simulator
+  in map2 (\y_i rs_i ->
+             let (radius, spheres) = rs_i
+             let s_contains_y s = d_y s y_i |> (f32.<=) radius
+             in map (s_contains_y) spheres |> or |> i64.bool)
+          Y_test
+          rs |> i64.sum |> f32.i64 |> flip (f32./) (f32.i64 m)
